@@ -5,6 +5,7 @@ import OverlayCore, { OverlayData, CardData } from './OverlayCore';
 class OverlayService {
     private currentOverlay: OverlayData | null = null;
     private tripDataForBubble: Omit<CardData, 'type'> | null = null;
+    private lastBadgeCount: number = 1;
 
     constructor() {
         AppState.addEventListener('change', this.handleAppStateChange);
@@ -35,13 +36,18 @@ class OverlayService {
     };
 
     private handleTripAccept = () => {
-        console.log('OverlayService: Trip accepted!');
+        console.log('accepted');
         this.hideOverlay();
     };
 
     private handleTripDecline = () => {
-        console.log('OverlayService: Trip declined!');
-        this.hideOverlay();
+        console.log('declined');
+        // Re-show the bubble immediately
+        if (this.tripDataForBubble) {
+            this.showBubble(this.lastBadgeCount, this.tripDataForBubble);
+        } else {
+            this.hideOverlay(); // Fallback to just hiding
+        }
     };
 
     private async showOverlay(data: OverlayData): Promise<void> {
@@ -69,6 +75,7 @@ class OverlayService {
     public async showBubble(badgeCount: number, tripData: Omit<CardData, 'type'>): Promise<void> {
         console.log('OverlayService: showBubble called.');
         this.tripDataForBubble = tripData;
+        this.lastBadgeCount = badgeCount;
         await this.showOverlay({ type: 'bubble', badgeCount });
     }
 

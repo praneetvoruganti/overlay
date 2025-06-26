@@ -12,10 +12,13 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.util.Log;
+import android.content.Intent;
+import android.app.PendingIntent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.awesomeproject.MainActivity;
 import com.awesomeproject.R;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -232,7 +235,22 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         Button acceptButton = mOverlayView.findViewById(R.id.accept_button);
         Button declineButton = mOverlayView.findViewById(R.id.decline_button);
 
-        acceptButton.setOnClickListener(v -> sendEvent("onTripAccepted", null));
+                acceptButton.setOnClickListener(v -> {
+            // Bring the app to the foreground using a PendingIntent for reliability
+            Context context = mReactContext.getApplicationContext();
+            Intent launchIntent = new Intent(context, MainActivity.class);
+            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            
+            int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, flags);
+            
+            try {
+                pendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+                Log.e(TAG, "Could not launch app from overlay", e);
+            }
+            sendEvent("onTripAccepted", null);
+        });
         declineButton.setOnClickListener(v -> sendEvent("onTripDeclined", null));
     }
 
