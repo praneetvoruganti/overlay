@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#A0000000"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/white"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/fare_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fare: $15.00"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/pickup_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pickup: 123 Main St"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:id="@+id/dropoff_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dropoff: 456 Oak Ave"
+            android:layout_marginTop="8dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
+
+            <Button
+                android:id="@+id/accept_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Accept" />
+
+            <Button
+                android:id="@+id/decline_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Decline" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

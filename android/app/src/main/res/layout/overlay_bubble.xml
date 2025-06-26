@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bubble_container"
+    android:layout_width="70dp"
+    android:layout_height="70dp">
+
+    <ImageView
+        android:id="@+id/bubble_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/bubble_background" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@mipmap/ic_launcher_round"
+        android:scaleType="centerInside"
+        android:padding="12dp"/>
+
+    <TextView
+        android:id="@+id/bubble_badge"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="top|end"
+        android:background="@drawable/badge_background"
+        android:gravity="center"
+        android:text="1"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+</FrameLayout>
