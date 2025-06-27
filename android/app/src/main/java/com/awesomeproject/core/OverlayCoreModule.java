@@ -33,6 +33,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.Calendar;
 
+// Manages system overlays (bubble, card) and communicates with JS.
 public class OverlayCoreModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
 
     private static final String TAG = "OverlayCoreModule";
@@ -41,14 +42,15 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
     private View mOverlayView;
     private WindowManager.LayoutParams mOverlayParams;
 
-    private String mCurrentOverlayType = null;
-    private int mBubbleLastX = 0;
+    // --- State ---
+    private String mCurrentOverlayType = null; // "bubble", "card", or null
+    private int mBubbleLastX = 0; // remember bubble position
     private int mBubbleLastY = 100;
 
     public OverlayCoreModule(ReactApplicationContext reactContext) {
         super(reactContext);
         mReactContext = reactContext;
-        mReactContext.addLifecycleEventListener(this);
+        mReactContext.addLifecycleEventListener(this); // handle app resume/pause
     }
 
     @NonNull
@@ -57,17 +59,18 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         return "OverlayCoreModule";
     }
 
+    // Show overlay from JS
     @ReactMethod
     public void showOverlay(ReadableMap data, Promise promise) {
         UiThreadUtil.runOnUiThread(() -> {
             if (mOverlayView != null) {
-                Log.w(TAG, "An overlay is already visible. Hide it before showing a new one.");
-                promise.reject("E_OVERLAY_EXISTS", "An overlay is already visible.");
+                promise.reject("E_OVERLAY_EXISTS", "Overlay already visible.");
                 return;
             }
 
+            // check permission first
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(mReactContext)) {
-                promise.reject("E_PERMISSION_DENIED", "Overlay permission is not granted.");
+                promise.reject("E_PERMISSION_DENIED", "Overlay permission denied.");
                 return;
             }
 
@@ -76,12 +79,13 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
             String type = data.getString("type");
 
             if (type == null) {
-                promise.reject("E_INVALID_TYPE", "Overlay type must be specified.");
+                promise.reject("E_INVALID_TYPE", "Overlay type missing.");
                 return;
             }
 
             mCurrentOverlayType = type;
 
+            // inflate correct layout
             switch (type) {
                 case "bubble":
                     mOverlayView = inflater.inflate(R.layout.overlay_bubble, null);
@@ -106,30 +110,39 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         });
     }
 
+    // Hide overlay from JS
     @ReactMethod
     public void hideOverlay(Promise promise) {
         UiThreadUtil.runOnUiThread(() -> {
-            if (mOverlayView != null && mWindowManager != null) {
-                try {
-                    mWindowManager.removeView(mOverlayView);
-                    mOverlayView = null;
-                    mCurrentOverlayType = null;
-                    mOverlayParams = null;
+            try {
+                hideOverlayInternal();
+                if (promise != null) {
                     promise.resolve(null);
-                } catch (Exception e) {
+                }
+            } catch (Exception e) {
+                if (promise != null) {
                     promise.reject("E_REMOVE_VIEW_FAILED", e.getMessage());
                 }
-            } else {
-                promise.resolve(null); // No-op if not visible
             }
         });
     }
 
+    // remove view and reset state
+    private void hideOverlayInternal() {
+        if (mOverlayView != null && mWindowManager != null) {
+            mWindowManager.removeView(mOverlayView);
+            mOverlayView = null;
+            mCurrentOverlayType = null;
+            mOverlayParams = null;
+        }
+    }
+
+    // Update overlay content from JS
     @ReactMethod
     public void updateOverlay(ReadableMap data, Promise promise) {
         UiThreadUtil.runOnUiThread(() -> {
             if (mOverlayView == null || mCurrentOverlayType == null) {
-                promise.reject("E_NO_OVERLAY", "No overlay is visible to update.");
+                promise.reject("E_NO_OVERLAY", "No overlay to update.");
                 return;
             }
 
@@ -145,23 +158,26 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         });
     }
 
+    // config bubble view, params, and listeners
     private void setupBubbleView(ReadableMap data) {
-        updateBubbleView(data);
+        updateBubbleView(data); // set initial content
+
         int layoutFlag = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                : WindowManager.LayoutParams.TYPE_PHONE;
+                : WindowManager.LayoutParams.TYPE_PHONE; // fallback for old android
 
         mOverlayParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutFlag,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, // allow touch passthrough
                 PixelFormat.TRANSLUCENT);
 
-        mOverlayParams.gravity = Gravity.TOP | Gravity.START;
-        mOverlayParams.x = mBubbleLastX;
+        mOverlayParams.gravity = Gravity.TOP | Gravity.START; // top-left corner
+        mOverlayParams.x = mBubbleLastX; // restore position
         mOverlayParams.y = mBubbleLastY;
 
+        // handle drag and click
         mOverlayView.setOnTouchListener(new View.OnTouchListener() {
             private long startClickTime;
             private float initialX, initialY, initialTouchX, initialTouchY;
@@ -178,6 +194,7 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
+                        // update position on drag
                         mOverlayParams.x = (int) (initialX + (event.getRawX() - initialTouchX));
                         mOverlayParams.y = (int) (initialY + (event.getRawY() - initialTouchY));
                         mWindowManager.updateViewLayout(mOverlayView, mOverlayParams);
@@ -187,17 +204,19 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
                         long clickDuration = Calendar.getInstance().getTimeInMillis() - startClickTime;
                         float clickDistance = (float) Math.hypot(event.getRawX() - initialTouchX, event.getRawY() - initialTouchY);
 
+                        // short, stationary touch = click
                         if (clickDuration < 200 && clickDistance < 15) {
                             sendEvent("onBubbleClicked", null);
                         } else {
-                            // Snap to edge and save position
+                            // otherwise, it's a drag, so snap to edge
                             int screenWidth = mReactContext.getResources().getDisplayMetrics().widthPixels;
                             if (mOverlayParams.x < (screenWidth - v.getWidth()) / 2) {
-                                mOverlayParams.x = 0;
+                                mOverlayParams.x = 0; // snap left
                             } else {
-                                mOverlayParams.x = screenWidth - v.getWidth();
+                                mOverlayParams.x = screenWidth - v.getWidth(); // snap right
                             }
                             mWindowManager.updateViewLayout(mOverlayView, mOverlayParams);
+                            // save position
                             mBubbleLastX = mOverlayParams.x;
                             mBubbleLastY = mOverlayParams.y;
                         }
@@ -208,8 +227,9 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         });
     }
 
+    // update bubble badge count
     private void updateBubbleView(ReadableMap data) {
-        if (data == null) return;
+        if (data == null || mOverlayView == null) return;
         TextView badge = mOverlayView.findViewById(R.id.bubble_badge);
         if (data.hasKey("badgeCount")) {
             int count = data.getInt("badgeCount");
@@ -218,68 +238,150 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         }
     }
 
+    // --- Card State ---
+    private double baseFare = 0;
+    private double currentFare = 0;
+
+    // config card view, params, and listeners
     private void setupCardView(ReadableMap data) {
-        updateCardView(data);
+        updateCardView(data); // set initial text fields
+
         int layoutFlag = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 : WindowManager.LayoutParams.TYPE_PHONE;
-
         mOverlayParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutFlag,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, // allow touch passthrough
                 PixelFormat.TRANSLUCENT);
-        mOverlayParams.gravity = Gravity.TOP;
+        mOverlayParams.gravity = Gravity.CENTER;
 
-        Button acceptButton = mOverlayView.findViewById(R.id.accept_button);
-        Button declineButton = mOverlayView.findViewById(R.id.decline_button);
+        // find views
+        final Button acceptButton = mOverlayView.findViewById(R.id.accept_button);
+        final Button ignoreButton = mOverlayView.findViewById(R.id.ignore_button);
+        final TextView totalFareTextView = mOverlayView.findViewById(R.id.total_fare_text);
+        final TextView increment1 = mOverlayView.findViewById(R.id.increment_1);
+        final TextView increment2 = mOverlayView.findViewById(R.id.increment_2);
+        final TextView increment3 = mOverlayView.findViewById(R.id.increment_3);
 
-                acceptButton.setOnClickListener(v -> {
-            // Bring the app to the foreground using a PendingIntent for reliability
-            Context context = mReactContext.getApplicationContext();
-            Intent launchIntent = new Intent(context, MainActivity.class);
-            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            
-            int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, flags);
-            
-            try {
-                pendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-                Log.e(TAG, "Could not launch app from overlay", e);
+        // init fare state
+        try {
+            if (data.hasKey("totalFare")) {
+                String fareString = data.getString("totalFare").replaceAll("[^\\d.]", "");
+                baseFare = Double.parseDouble(fareString);
+            } else {
+                baseFare = 0;
             }
-            sendEvent("onTripAccepted", null);
+            currentFare = baseFare;
+            updateFareDisplay(totalFareTextView, acceptButton);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not parse base fare from: " + (data.hasKey("totalFare") ? data.getString("totalFare") : "null"), e);
+            baseFare = 0;
+            currentFare = 0;
+            updateFareDisplay(totalFareTextView, acceptButton);
+        }
+
+        // listener for fare increments
+        View.OnClickListener incrementListener = v -> {
+            String text = ((TextView) v).getText().toString();
+            try {
+                double increment = Double.parseDouble(text.replaceAll("[^\\d.]", ""));
+                currentFare = baseFare + increment; // always add to base
+                updateFareDisplay(totalFareTextView, acceptButton);
+            } catch (NumberFormatException ex) {
+                Log.e(TAG, "Could not parse increment from: " + text, ex);
+            }
+        };
+
+        increment1.setOnClickListener(incrementListener);
+        increment2.setOnClickListener(incrementListener);
+        increment3.setOnClickListener(incrementListener);
+
+        // accept button listener
+        acceptButton.setOnClickListener(v -> {
+            WritableMap params = Arguments.createMap();
+            params.putDouble("finalFare", currentFare);
+            sendEvent("onTripAccepted", params);
+            hideOverlayInternal();
+
+            // bring app to foreground
+            Context context = getReactApplicationContext();
+            String packageName = context.getPackageName();
+            Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                context.startActivity(launchIntent);
+            }
         });
-        declineButton.setOnClickListener(v -> sendEvent("onTripDeclined", null));
+
+        // ignore button listener
+        ignoreButton.setOnClickListener(v -> {
+            sendEvent("onTripIgnored", null);
+            hideOverlayInternal();
+        });
     }
 
-    private void updateCardView(ReadableMap data) {
-        if (data == null) return;
-        TextView fareText = mOverlayView.findViewById(R.id.fare_text);
-        TextView pickupText = mOverlayView.findViewById(R.id.pickup_text);
-        TextView dropoffText = mOverlayView.findViewById(R.id.dropoff_text);
+    // update fare text on card and button
+    private void updateFareDisplay(TextView totalFareView, Button acceptButton) {
+        String fareText = String.format(java.util.Locale.US, "₹%.0f", currentFare);
+        totalFareView.setText(fareText);
+        acceptButton.setText(String.format("Accept for %s", fareText));
+    }
 
-        if (data.hasKey("fare")) fareText.setText("Fare: " + data.getString("fare"));
-        if (data.hasKey("pickup")) pickupText.setText("Pickup: " + data.getString("pickup"));
-        if (data.hasKey("dropoff")) dropoffText.setText("Dropoff: " + data.getString("dropoff"));
+    /**
+     * Updates the non-interactive text fields on the card.
+     * @param cardData The new data from JavaScript.
+     */
+    private void updateCardView(ReadableMap cardData) {
+        if (mOverlayView == null || cardData == null) return;
+
+        // Find the TextViews by their ID.
+        TextView destinationText = mOverlayView.findViewById(R.id.destination_text);
+        TextView distanceText = mOverlayView.findViewById(R.id.distance_text);
+        TextView etaText = mOverlayView.findViewById(R.id.eta_text);
+
+        // Update their text if the data exists in the map.
+        if (cardData.hasKey("destination")) destinationText.setText(cardData.getString("destination"));
+        if (cardData.hasKey("distance")) distanceText.setText(cardData.getString("distance"));
+        if (cardData.hasKey("eta")) etaText.setText(cardData.getString("eta"));
+
+        // Set the text for the increment buttons. This could also come from JS data.
+        TextView increment1 = mOverlayView.findViewById(R.id.increment_1);
+        TextView increment2 = mOverlayView.findViewById(R.id.increment_2);
+        TextView increment3 = mOverlayView.findViewById(R.id.increment_3);
+        increment1.setText("+ ₹5");
+        increment2.setText("+ ₹10");
+        increment3.setText("+ ₹20");
+    }
+
+    // --- LifecycleEventListener Methods ---
+
+    @Override
+    public void onHostResume() {
+        // This is called when the app comes to the foreground. Not used here.
     }
 
     @Override
-    public void onHostResume() {}
-
-    @Override
-    public void onHostPause() {}
+    public void onHostPause() {
+        // This is called when the app goes to the background. Not used here.
+    }
 
     @Override
     public void onHostDestroy() {
-        // Clean up the view when the host activity is destroyed
+        // This is called when the main React Native activity is destroyed.
+        // It's crucial to clean up our overlay to prevent a 'window leak'.
         if (mOverlayView != null) {
             mWindowManager.removeView(mOverlayView);
             mOverlayView = null;
         }
     }
 
+    /**
+     * A helper method to send an event from native code to JavaScript.
+     * @param eventName The name of the event (e.g., "onTripAccepted").
+     * @param params Optional data to send with the event.
+     */
     private void sendEvent(String eventName, @Nullable WritableMap params) {
         mReactContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
