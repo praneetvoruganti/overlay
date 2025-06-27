@@ -40,7 +40,10 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
     private final ReactApplicationContext mReactContext;
     private WindowManager mWindowManager;
     private View mOverlayView;
+    private View mDismissView; // view for the 'X' dismiss button
     private WindowManager.LayoutParams mOverlayParams;
+    private WindowManager.LayoutParams mDismissParams;
+    private boolean mIsBubbleOverlappingDismiss = false; // for drag-to-dismiss
 
     // --- State ---
     private String mCurrentOverlayType = null; // "bubble", "card", or null
@@ -129,12 +132,17 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
 
     // remove view and reset state
     private void hideOverlayInternal() {
+        // remove main overlay
         if (mOverlayView != null && mWindowManager != null) {
-            mWindowManager.removeView(mOverlayView);
+            try {
+                mWindowManager.removeView(mOverlayView);
+            } catch (Exception e) { /* ignore */ }
             mOverlayView = null;
             mCurrentOverlayType = null;
             mOverlayParams = null;
         }
+        // also remove dismiss view if it exists
+        hideDismissView();
     }
 
     // Update overlay content from JS
@@ -177,10 +185,12 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         mOverlayParams.x = mBubbleLastX; // restore position
         mOverlayParams.y = mBubbleLastY;
 
-        // handle drag and click
+        // handle drag, click, and dismiss
         mOverlayView.setOnTouchListener(new View.OnTouchListener() {
             private long startClickTime;
             private float initialX, initialY, initialTouchX, initialTouchY;
+            private final int screenHeight = mReactContext.getResources().getDisplayMetrics().heightPixels;
+            private final int dismissZoneHeight = 300; // px from bottom for dismiss zone
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -191,6 +201,7 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
                         initialY = mOverlayParams.y;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
+                        showDismissView(); // show 'X' on drag start
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
@@ -198,9 +209,22 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
                         mOverlayParams.x = (int) (initialX + (event.getRawX() - initialTouchX));
                         mOverlayParams.y = (int) (initialY + (event.getRawY() - initialTouchY));
                         mWindowManager.updateViewLayout(mOverlayView, mOverlayParams);
+
+                        // check if over dismiss zone and give visual feedback
+                        mIsBubbleOverlappingDismiss = event.getRawY() > screenHeight - dismissZoneHeight;
+                        if (mDismissView != null) {
+                            mDismissView.setAlpha(mIsBubbleOverlappingDismiss ? 1.0f : 0.5f);
+                        }
                         return true;
 
                     case MotionEvent.ACTION_UP:
+                        hideDismissView(); // always hide 'X' on drag end
+
+                        if (mIsBubbleOverlappingDismiss) {
+                            hideOverlayInternal(); // bye bye bubble
+                            return true;
+                        }
+
                         long clickDuration = Calendar.getInstance().getTimeInMillis() - startClickTime;
                         float clickDistance = (float) Math.hypot(event.getRawX() - initialTouchX, event.getRawY() - initialTouchY);
 
@@ -228,6 +252,48 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
     }
 
     // update bubble badge count
+        // show the 'X' dismiss button at the bottom
+    private void showDismissView() {
+        if (mDismissView != null) return;
+
+        UiThreadUtil.runOnUiThread(() -> {
+            LayoutInflater inflater = (LayoutInflater) mReactContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            mDismissView = inflater.inflate(R.layout.overlay_dismiss_button, null);
+            mDismissView.setAlpha(0.5f); // start semi-transparent
+
+            int layoutFlag = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    : WindowManager.LayoutParams.TYPE_PHONE;
+
+            mDismissParams = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    layoutFlag,
+                    // not focusable or touchable, it's just a target
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    PixelFormat.TRANSLUCENT);
+
+            mDismissParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+            mDismissParams.y = 50;
+
+            mWindowManager.addView(mDismissView, mDismissParams);
+        });
+    }
+
+    // remove the 'X' dismiss button
+    private void hideDismissView() {
+        UiThreadUtil.runOnUiThread(() -> {
+            if (mDismissView != null && mWindowManager != null) {
+                try {
+                    mWindowManager.removeView(mDismissView);
+                } catch (Exception e) {
+                    Log.w(TAG, "Could not remove dismiss view, maybe it was already gone.");
+                }
+                mDismissView = null;
+            }
+        });
+    }
+
     private void updateBubbleView(ReadableMap data) {
         if (data == null || mOverlayView == null) return;
         TextView badge = mOverlayView.findViewById(R.id.bubble_badge);

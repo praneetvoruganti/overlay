@@ -1,6 +1,6 @@
 // React and RN components.
-import React, { useState, useEffect } from 'react';
-import { View, Button, StyleSheet, Text, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Button, StyleSheet, Text, ScrollView, SafeAreaView, AppState } from 'react-native';
 
 // Our overlay logic.
 import OverlayService from '../../modules/OverlayService';
@@ -10,6 +10,8 @@ import OverlayPermission from '../../modules/OverlayPermission';
 const OverlayDemoScreen = () => {
   // State for on-screen logs.
   const [logs, setLogs] = useState<string[]>([]);
+  // Ref to track app state, avoids re-renders.
+  const appState = useRef(AppState.currentState);
 
   // Helper to add a message to the on-screen log.
   const log = (message: string) => {
@@ -17,9 +19,27 @@ const OverlayDemoScreen = () => {
     setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${message}`, ...prev]);
   };
 
-  // On component mount, set up event listeners.
+  // On component mount, set up listeners.
   useEffect(() => {
     log('Demo screen loaded.');
+
+    // --- App State Listener ---
+    // Show bubble on background, hide on foreground.
+    const handleAppStateChange = (nextAppState: any) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        log('App active, hiding overlay.');
+        hideOverlay();
+      } else if (nextAppState === 'background') {
+        log('App in background, showing bubble.');
+        showBubble();
+      }
+      appState.current = nextAppState;
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
 
     // --- Event Handlers ---
     const onTripAccepted = (event: { finalFare?: number }) => {
@@ -36,6 +56,7 @@ const OverlayDemoScreen = () => {
     // Cleanup on component unmount.
     return () => {
       log('Cleaning up listeners.');
+      appStateSubscription.remove();
       OverlayService.removeEventListener('onTripAccepted', onTripAccepted);
       OverlayService.removeEventListener('onTripIgnored', onTripIgnored);
       OverlayService.removeEventListener('onBubbleClicked', onBubbleClicked);
