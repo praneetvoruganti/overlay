@@ -6,13 +6,17 @@
     android:gravity="center"
     android:padding="24dp">
 
-    <ImageView
+    <TextView
         android:id="@+id/dismiss_icon"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:layout_gravity="center"
-        android:background="@android:drawable/ic_delete"
-        android:backgroundTint="#FF6347"
-        android:contentDescription="@string/dismiss_overlay" />
+        android:background="@drawable/dismiss_background"
+        android:contentDescription="@string/dismiss_overlay"
+        android:gravity="center"
+        android:text="X"
+        android:textColor="#FF6347"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
 </FrameLayout>
