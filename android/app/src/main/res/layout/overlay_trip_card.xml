@@ -1,174 +1,201 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="32dp"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:background="@drawable/modern_card_background"
+        android:background="@drawable/polished_card_background"
+        android:elevation="24dp"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:elevation="12dp">
+        android:padding="28dp">
 
         <!-- Destination Header -->
         <TextView
             android:id="@+id/destination_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:gravity="center"
             android:text="123 Market Street, Downtown"
+            android:textColor="#1D1D1F"
             android:textSize="26sp"
-            android:textColor="#1C1C1E"
-            android:fontFamily="sans-serif-medium"
-            android:gravity="center" />
+            tools:text="123 Market Street, Downtown" />
 
         <!-- Distance & ETA -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:layout_gravity="center"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
 
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_map_pin"
-                android:layout_marginEnd="6dp"
-                android:tint="#8A8A8E" />
             <TextView
                 android:id="@+id/distance_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
                 android:text="5.2 miles"
-                android:textSize="16sp"
-                android:textColor="#636366"/>
+                android:textColor="#8A8A8E"
+                android:textSize="17sp" />
 
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_clock"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="6dp"
-                android:tint="#8A8A8E" />
+            <View
+                android:layout_width="1dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="16dp"
+                android:background="#E5E5EA" />
+
             <TextView
                 android:id="@+id/eta_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
                 android:text="15 mins"
-                android:textSize="16sp"
-                android:textColor="#636366"/>
+                android:textColor="#8A8A8E"
+                android:textSize="17sp" />
         </LinearLayout>
 
         <!-- Spacer -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="24dp" />
+            android:layout_height="36dp" />
 
         <!-- Fare Section -->
         <TextView
             android:id="@+id/total_fare_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="₹50"
-            android:textSize="48sp"
             android:fontFamily="sans-serif-bold"
-            android:textColor="#1C1C1E"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:text="₹50"
+            android:textColor="#1D1D1F"
+            android:textSize="64sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Base Fare"
-            android:textSize="14sp"
-            android:textColor="#8A8A8E"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif"
             android:gravity="center"
-            android:layout_marginTop="4dp"/>
+            android:text="Base Fare"
+            android:textAllCaps="true"
+            android:textColor="#8A8A8E"
+            android:textSize="14sp"
+            android:letterSpacing="0.05"/>
 
         <!-- Fare Increment Pills -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:layout_marginTop="28dp"
             android:gravity="center"
-            android:layout_marginTop="20dp">
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/increment_1"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/modern_pill_button_background"
-                android:paddingVertical="10dp"
-                android:paddingHorizontal="20dp"
+                android:layout_height="44dp"
+                android:background="@drawable/polished_pill_button"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="28dp"
                 android:text="+ ₹5"
+                android:textAllCaps="false"
                 android:textColor="#007AFF"
-                android:textSize="16sp"
-                android:fontFamily="sans-serif-medium" />
+                android:textSize="17sp" />
+
             <TextView
                 android:id="@+id/increment_2"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/modern_pill_button_background"
-                android:paddingVertical="10dp"
-                android:paddingHorizontal="20dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="12dp"
+                android:background="@drawable/polished_pill_button"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="28dp"
                 android:text="+ ₹10"
+                android:textAllCaps="false"
                 android:textColor="#007AFF"
-                android:textSize="16sp"
-                android:fontFamily="sans-serif-medium" />
+                android:textSize="17sp" />
+
             <TextView
                 android:id="@+id/increment_3"
+                style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/modern_pill_button_background"
-                android:paddingVertical="10dp"
-                android:paddingHorizontal="20dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="12dp"
+                android:background="@drawable/polished_pill_button"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="28dp"
                 android:text="+ ₹20"
+                android:textAllCaps="false"
                 android:textColor="#007AFF"
-                android:textSize="16sp"
-                android:fontFamily="sans-serif-medium" />
+                android:textSize="17sp" />
         </LinearLayout>
 
         <!-- Spacer -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="32dp" />
+            android:layout_height="48dp" />
 
         <!-- Action Buttons -->
         <Button
             android:id="@+id/accept_button"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="Accept for ₹50"
-            android:background="@drawable/modern_accept_button_background"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
+            android:background="@drawable/polished_accept_button"
             android:fontFamily="sans-serif-bold"
-            android:textAllCaps="false" />
+            android:text="Accept for ₹50"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
 
         <Button
             android:id="@+id/ignore_button"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_width="wrap_content"
+            android:layout_height="52dp"
+            android:layout_gravity="center_horizontal"
             android:layout_marginTop="12dp"
-            android:text="Decline"
-            android:background="@drawable/modern_decline_button_background"
-            android:textColor="#8A8A8E"
-            android:textSize="20sp"
+            android:background="@drawable/polished_ignore_button"
             android:fontFamily="sans-serif-medium"
-            android:textAllCaps="false" />
+            android:text="Decline"
+            android:textAllCaps="false"
+            android:textColor="#8A8A8E"
+            android:textSize="17sp" />
 
     </LinearLayout>
 
     <!-- Hidden fields for compatibility -->
-    <TextView android:id="@+id/fare_details_text" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <TextView android:id="@+id/landmark_text" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <TextView android:id="@+id/payment_method_text" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <TextView android:id="@+id/rider_rating_text" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <TextView android:id="@+id/passenger_count_text" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <TextView
+        android:id="@+id/fare_details_text"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/landmark_text"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/payment_method_text"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/rider_rating_text"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/passenger_count_text"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 </RelativeLayout>
