@@ -5,6 +5,18 @@ import { View, Button, StyleSheet, Text, ScrollView, SafeAreaView, AppState } fr
 // Our overlay logic.
 import OverlayService from '../../modules/OverlayService';
 import OverlayPermission from '../../modules/OverlayPermission';
+import { CardData } from '../../modules/OverlayCore';
+
+// Mock data for the new trip card design.
+const mockTripData: Omit<CardData, 'type'> = {
+  pickupAddress: '123 Main Street, Springfield, 60001',
+  dropoffAddress: '456 Oak Avenue, Shelbyville, 60002',
+  distance: '10.5 km',
+  duration: '25 min',
+  baseFare: '₹450',
+  customerName: 'Jane Doe',
+  carType: 'Sedan',
+};
 
 // Demo screen for testing the overlay system.
 const OverlayDemoScreen = () => {
@@ -91,31 +103,19 @@ const OverlayDemoScreen = () => {
   const showBubble = () => {
     log('Showing bubble...');
     // The service caches this data to show the card later.
-    const tripData = {
-      destination: '123 Market Street, Downtown',
-      totalFare: '₹50',
-      distance: '5.2 miles',
-      eta: '15 mins',
-    };
-    OverlayService.showBubble(1, tripData).catch(e => log(`Error: ${e.message}`))
+    OverlayService.showBubble(1, mockTripData).catch(e => log(`Error: ${e.message}`))
   };
 
-  // Show the full trip card directly.
+  // Show the trip card directly.
   const showTripCard = () => {
-    log('Showing trip card...');
-    const tripData = {
-      destination: '123 Market Street, Downtown',
-      totalFare: '₹50',
-      distance: '5.2 miles',
-      eta: '15 mins',
-    };
-    OverlayService.showTripCard(tripData).catch(e => log(`Error: ${e.message}`));
+    log('Showing card directly...');
+    OverlayService.showTripCard(mockTripData).catch(e => log(`Error: ${e.message}`));
   };
 
   // Hide any visible overlay.
   const hideOverlay = () => {
     log('Hiding overlay...');
-    OverlayService.hideOverlay().catch(e => log(`Error: ${e.message}`))
+    OverlayService.hideOverlay().catch(e => log(`Error: ${e.message}`));
   };
 
   // JSX for the screen UI.

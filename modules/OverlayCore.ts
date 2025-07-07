@@ -13,15 +13,13 @@ export interface BubbleData {
 // Data for the trip card view.
 export interface CardData {
   type: 'card'; // Tells native which view to inflate.
-  destination?: string;
-  landmark?: string;
-  totalFare?: string;
-  distance?: string;
-  eta?: string;
-  fareDetails?: string;
-  paymentMethod?: string;
-  riderRating?: string;
-  passengerCount?: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  distance: string;
+  duration: string;
+  baseFare: string;
+  customerName: string;
+  carType: string;
 }
 
 // An overlay can be a bubble or a card.

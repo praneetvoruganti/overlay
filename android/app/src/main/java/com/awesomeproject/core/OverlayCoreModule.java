@@ -327,42 +327,47 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         final Button acceptButton = mOverlayView.findViewById(R.id.accept_button);
         final Button ignoreButton = mOverlayView.findViewById(R.id.ignore_button);
         final TextView totalFareTextView = mOverlayView.findViewById(R.id.total_fare_text);
-        final TextView increment1 = mOverlayView.findViewById(R.id.increment_1);
-        final TextView increment2 = mOverlayView.findViewById(R.id.increment_2);
-        final TextView increment3 = mOverlayView.findViewById(R.id.increment_3);
+        final TextView addon1 = mOverlayView.findViewById(R.id.addon_button_1);
+        final TextView addon2 = mOverlayView.findViewById(R.id.addon_button_2);
+        final TextView addon3 = mOverlayView.findViewById(R.id.addon_button_3);
+        final TextView addon4 = mOverlayView.findViewById(R.id.addon_button_4);
+        final TextView addon5 = mOverlayView.findViewById(R.id.addon_button_5);
 
         // init fare state
         try {
-            if (data.hasKey("totalFare")) {
-                String fareString = data.getString("totalFare").replaceAll("[^\\d.]", "");
+            if (data.hasKey("baseFare")) {
+                String fareString = data.getString("baseFare").replaceAll("[^\\d.]", "");
                 baseFare = Double.parseDouble(fareString);
             } else {
                 baseFare = 0;
             }
             currentFare = baseFare;
-            updateFareDisplay(totalFareTextView, acceptButton);
+            updateFareDisplay(totalFareTextView);
         } catch (Exception e) {
-            Log.e(TAG, "Could not parse base fare from: " + (data.hasKey("totalFare") ? data.getString("totalFare") : "null"), e);
+            Log.e(TAG, "Could not parse base fare from: " + (data.hasKey("baseFare") ? data.getString("baseFare") : "null"), e);
             baseFare = 0;
             currentFare = 0;
-            updateFareDisplay(totalFareTextView, acceptButton);
+            updateFareDisplay(totalFareTextView);
         }
 
-        // listener for fare increments
-        View.OnClickListener incrementListener = v -> {
+        // listener for fare addons
+        View.OnClickListener addonListener = v -> {
             String text = ((TextView) v).getText().toString();
             try {
-                double increment = Double.parseDouble(text.replaceAll("[^\\d.]", ""));
-                currentFare = baseFare + increment; // always add to base
-                updateFareDisplay(totalFareTextView, acceptButton);
+                // Extract number from "+₹5", "+₹10", etc.
+                double addon = Double.parseDouble(text.replaceAll("[^\\d.]", ""));
+                currentFare = baseFare + addon;
+                updateFareDisplay(totalFareTextView);
             } catch (NumberFormatException ex) {
-                Log.e(TAG, "Could not parse increment from: " + text, ex);
+                Log.e(TAG, "Could not parse addon from: " + text, ex);
             }
         };
 
-        increment1.setOnClickListener(incrementListener);
-        increment2.setOnClickListener(incrementListener);
-        increment3.setOnClickListener(incrementListener);
+        addon1.setOnClickListener(addonListener);
+        addon2.setOnClickListener(addonListener);
+        addon3.setOnClickListener(addonListener);
+        addon4.setOnClickListener(addonListener);
+        addon5.setOnClickListener(addonListener);
 
         // accept button listener
         acceptButton.setOnClickListener(v -> {
@@ -388,11 +393,10 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
         });
     }
 
-    // update fare text on card and button
-    private void updateFareDisplay(TextView totalFareView, Button acceptButton) {
+    // update fare text on card
+    private void updateFareDisplay(TextView totalFareView) {
         String fareText = String.format(java.util.Locale.US, "₹%.0f", currentFare);
         totalFareView.setText(fareText);
-        acceptButton.setText(String.format("Accept for %s", fareText));
     }
 
     /**
@@ -400,25 +404,35 @@ public class OverlayCoreModule extends ReactContextBaseJavaModule implements Lif
      * @param cardData The new data from JavaScript.
      */
     private void updateCardView(ReadableMap cardData) {
-        if (mOverlayView == null || cardData == null) return;
+        if (cardData == null || mOverlayView == null) return;
 
-        // Find the TextViews by their ID.
-        TextView destinationText = mOverlayView.findViewById(R.id.destination_text);
+        // Find all the new views
+        TextView pickupAddressText = mOverlayView.findViewById(R.id.pickup_address_text);
+        TextView dropoffAddressText = mOverlayView.findViewById(R.id.dropoff_address_text);
         TextView distanceText = mOverlayView.findViewById(R.id.distance_text);
-        TextView etaText = mOverlayView.findViewById(R.id.eta_text);
+        TextView durationText = mOverlayView.findViewById(R.id.duration_text);
+        TextView customerNameText = mOverlayView.findViewById(R.id.customer_name_text);
+        TextView carTypeText = mOverlayView.findViewById(R.id.car_type_text);
 
-        // Update their text if the data exists in the map.
-        if (cardData.hasKey("destination")) destinationText.setText(cardData.getString("destination"));
-        if (cardData.hasKey("distance")) distanceText.setText(cardData.getString("distance"));
-        if (cardData.hasKey("eta")) etaText.setText(cardData.getString("eta"));
-
-        // Set the text for the increment buttons. This could also come from JS data.
-        TextView increment1 = mOverlayView.findViewById(R.id.increment_1);
-        TextView increment2 = mOverlayView.findViewById(R.id.increment_2);
-        TextView increment3 = mOverlayView.findViewById(R.id.increment_3);
-        increment1.setText("+ ₹5");
-        increment2.setText("+ ₹10");
-        increment3.setText("+ ₹20");
+        // Update view texts from cardData
+        if (cardData.hasKey("pickupAddress")) {
+            pickupAddressText.setText(cardData.getString("pickupAddress"));
+        }
+        if (cardData.hasKey("dropoffAddress")) {
+            dropoffAddressText.setText(cardData.getString("dropoffAddress"));
+        }
+        if (cardData.hasKey("distance")) {
+            distanceText.setText(cardData.getString("distance"));
+        }
+        if (cardData.hasKey("duration")) {
+            durationText.setText(cardData.getString("duration"));
+        }
+        if (cardData.hasKey("customerName")) {
+            customerNameText.setText(cardData.getString("customerName"));
+        }
+        if (cardData.hasKey("carType")) {
+            carTypeText.setText(cardData.getString("carType"));
+        }
     }
 
     // --- LifecycleEventListener Methods ---

@@ -94,6 +94,34 @@ It's a bridge between your JavaScript code and the native Android code.
 
 It's all handled by the `OverlayService` and the `OverlayDemoScreen`.
 
+### Trip Card Redesign (July 2024)
+
+The trip card overlay was completely redesigned to provide a more modern, premium, and informative experience for the driver.
+
+**Key Changes:**
+
+1.  **New UI/UX**:
+    *   The layout (`overlay_trip_card.xml`) was rebuilt from the ground up.
+    *   It now features a clean, card-based design with better visual hierarchy and spacing.
+    *   Key information is grouped logically for at-a-glance readability.
+
+2.  **Expanded Trip Details**:
+    *   The card now displays comprehensive trip information:
+        *   **Pickup & Drop-off Addresses**: Clearly labeled start and end points.
+        *   **Distance & Duration**: Estimated travel distance and time.
+        *   **Customer & Car Info**: Displays the customer's name and the required car type (e.g., "Sedan").
+        *   **Base Fare**: The initial estimated fare for the trip.
+
+3.  **Interactive Fare Addons**:
+    *   Five new tappable "addon" buttons (`+₹5`, `+₹10`, `+₹15`, `+₹20`, `+₹25`) have been added.
+    *   Tapping an addon button dynamically updates the total fare displayed on the card.
+    *   The final fare (base + addon) is sent back to the React Native layer when the driver accepts the ride.
+
+4.  **Updated Data Flow**:
+    *   The `CardData` TypeScript interface (`modules/OverlayCore.ts`) was updated to include the new fields (`pickupAddress`, `dropoffAddress`, `distance`, `duration`, `baseFare`, `customerName`, `carType`).
+    *   The native `OverlayCoreModule.java` was enhanced to find the new UI elements, populate them with the new data, and handle the fare addon logic.
+    *   The `OverlayDemoScreen.tsx` was updated with a `mockTripData` object to reflect the new data structure for easy testing.
+
 #### Automatic Behavior
 
 -   **Backgrounding**: When the app moves to the background, the bubble will automatically appear. This is handled by an `AppState` listener in `OverlayDemoScreen.tsx`.
