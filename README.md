@@ -49,8 +49,8 @@ It's a bridge between your JavaScript code and the native Android code.
                                                       |
                                                       v
  [ RN Bridge ] <-- sends "onTripAccepted" event -- [ Java Bridge ]
-       |
-       v
+       |                                              |
+       v                                              v
  [ Your RN App ] // Listens for the event and reacts
 
 ```
@@ -167,4 +167,19 @@ OverlayService.addEventListener('onBubbleClicked', () => {
   // The service handles showing the card automatically.
 });
 ```
+
+---
+
+### User-Friendly Permission Flow (July 2024)
+
+To improve the user experience, the standard permission alert has been replaced with a custom, premium-themed modal.
+
+**Key Changes:**
+
+-   **Custom Modal:** Instead of a generic system alert, the app now displays a full-screen modal that matches the app's branding. This avoids a jarring user experience.
+-   **Clear, Simple Language:** The text is written in simple, direct language, telling the driver exactly what the permission is for and what to do.
+    -   It explicitly instructs them to find "AwesomeProject" in the settings list and "turn the switch on."
+-   **Streamlined Action:** The modal removes the "Cancel" option. The only choice is "Go to Settings," guiding the user toward the necessary action to ensure the app functions correctly.
+
+This change makes the permission request process less intimidating and much clearer for non-technical users like drivers.
 
