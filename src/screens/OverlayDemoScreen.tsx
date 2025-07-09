@@ -6,6 +6,7 @@ import { View, Button, StyleSheet, Text, ScrollView, SafeAreaView, AppState } fr
 import OverlayService from '../../modules/OverlayService';
 import OverlayPermission from '../../modules/OverlayPermission';
 import { CardData } from '../../modules/OverlayCore';
+import PermissionModal from '../components/PermissionModal';
 
 // Mock data for the new trip card design.
 const mockTripData: Omit<CardData, 'type'> = {
@@ -22,6 +23,7 @@ const mockTripData: Omit<CardData, 'type'> = {
 const OverlayDemoScreen = () => {
   // State for on-screen logs.
   const [logs, setLogs] = useState<string[]>([]);
+  const [isModalVisible, setModalVisible] = useState(false);
   // Ref to track app state, avoids re-renders.
   const appState = useRef(AppState.currentState);
 
@@ -92,10 +94,26 @@ const OverlayDemoScreen = () => {
   const requestPermission = async () => {
     log('Requesting permission...');
     try {
-      await OverlayPermission.requestOverlayPermission();
-      log('Permission dialog shown.');
+      const hasPermission = await OverlayPermission.checkOverlayPermission();
+      if (hasPermission) {
+        log('Permission is already granted.');
+        // Optionally, show a brief confirmation message if needed.
+        return;
+      }
+      // If permission is not granted, show our custom modal.
+      setModalVisible(true);
     } catch (e: any) {
-      log(`Error: ${e.message}`);
+      log(`Error checking permission: ${e.message}`);
+    }
+  };
+
+  const handleConfirmPermission = async () => {
+    setModalVisible(false);
+    log('User confirmed. Opening settings...');
+    try {
+      await OverlayPermission.requestOverlayPermission();
+    } catch (e: any) {
+      log(`Error opening settings: ${e.message}`);
     }
   };
 
@@ -121,6 +139,10 @@ const OverlayDemoScreen = () => {
   // JSX for the screen UI.
   return (
     <SafeAreaView style={styles.safeArea}>
+      <PermissionModal
+        visible={isModalVisible}
+        onConfirm={handleConfirmPermission}
+      />
       <View style={styles.container}>
         <Text style={styles.title}>Overlay Demo</Text>
         {/* Control buttons */}
